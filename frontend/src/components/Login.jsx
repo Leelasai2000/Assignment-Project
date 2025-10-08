@@ -1,14 +1,42 @@
-// src/components/Login.jsx - Only changes shown
-
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // <-- ADDED Link
+import { useNavigate, Link } from 'react-router-dom';
 import { Box, TextField, Button, Typography, Paper, Alert } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 
 const API_URL = 'http://localhost:5000/api/auth/login';
 
 function Login() {
-    // ... (rest of the component state and login logic is unchanged)
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState(null); // Correctly defined state variable
+    const navigate = useNavigate();
+    const { login } = useAuth();
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setError(null);
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.msg || 'Login failed');
+            }
+
+            login(data.token, data.user);
+            navigate('/');
+        } catch (err) {
+            setError(err.message);
+        }
+    };
 
     return (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
@@ -16,7 +44,7 @@ function Login() {
                 <Typography variant="h5" component="h1" gutterBottom align="center">
                     User Login
                 </Typography>
-                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>} {/* Uses the correctly defined 'error' state */}
                 <Box component="form" onSubmit={handleLogin} noValidate sx={{ mt: 1 }}>
                     <TextField
                         margin="normal"
@@ -45,8 +73,9 @@ function Login() {
                         Sign In
                     </Button>
                 </Box>
+                {/* Updated link to the new Register component */}
                 <Typography variant="body2" align="center">
-                    Don't have an account? <Link to="/register">Sign Up Here</Link> {/* <-- FIXED LINK */}
+                    Don't have an account? <Link to="/register">Sign Up Here</Link>
                 </Typography>
             </Paper>
         </Box>

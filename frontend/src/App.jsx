@@ -1,4 +1,4 @@
-// src/App.js - Only changes shown
+
 
 import { Box, CssBaseline } from '@mui/material'; 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -6,7 +6,7 @@ import Navbar from './components/Navbar';
 import ProductList from './components/ProductList';
 import ProductDetails from './components/ProductDetails';
 import Login from './components/Login';
-import Register from './components/Register'; // <-- NEW IMPORT
+import Register from './components/Register'; 
 import Cart from './components/Cart';
 import { AuthProvider } from './context/AuthContext';
 
@@ -30,9 +30,10 @@ function App() {
                         <Route path="/" element={<ProductList />} />
                         <Route path="/product/:id" element={<ProductDetails />} />
                         <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} /> // <-- NEW ROUTE
+                        <Route path="/register" element={<Register />} /> 
                         <Route path="/cart" element={<Cart />} />
                     </Routes>
+
                 </Box>
             </Router>
         </AuthProvider>

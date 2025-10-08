@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 
 const API_BASE = 'https://catalog-management-system-dev-ak3ogf6zeauc.a.run.app/cms/products';
 
-// F-8: Utility for getting state from localStorage
 const getInitialState = (key, defaultValue) => {
     try {
         const saved = localStorage.getItem(key);
@@ -31,7 +30,7 @@ function ProductList() {
     const [sortModel, setSortModel] = useState(getInitialState('sortModel', []));
     const [categories, setCategories] = useState([]);
 
-    // F-8: Persist state to localStorage
+    
     useEffect(() => {
         localStorage.setItem('paginationState', JSON.stringify(pageState));
         localStorage.setItem('categoryFilter', JSON.stringify(categoryFilter));
@@ -39,14 +38,14 @@ function ProductList() {
         localStorage.setItem('sortModel', JSON.stringify(sortModel));
     }, [pageState, categoryFilter, searchQuery, sortModel]);
 
-    // F-2, F-9, F-15 (API Fetching logic)
+    
     const fetchProducts = useCallback(async () => {
-        setLoading(true); // F-10: Loader
+        setLoading(true); 
         setError(null);
         
         let url = `${API_BASE}?page=${pageState.page + 1}`;
         
-        // F-7: Add sorting by price
+        
         if (sortModel.length > 0) {
             const field = sortModel[0].field;
             const sort = sortModel[0].sort;
@@ -63,20 +62,20 @@ function ProductList() {
             
             const data = await response.json();
             
-            // Extract unique categories for the dropdown
+            
             const uniqueCategories = [...new Set(data.products.map(p => p.category))];
             setCategories(prev => [...new Set([...prev, ...uniqueCategories])].sort());
 
             setProducts(data.products.map(p => ({
                 ...p,
-                id: p._id // DataGrid requires a unique 'id' field
+                id: p._id 
             })));
             setPageState(prev => ({
                 ...prev,
                 totalProducts: data.totalProducts,
             }));
         } catch (err) {
-            setError(err.message); // F-10: Error handling
+            setError(err.message); 
         } finally {
             setLoading(false);
         }
@@ -86,7 +85,7 @@ function ProductList() {
         fetchProducts();
     }, [fetchProducts]);
 
-    // F-5, F-6: Client-side filtering
+    
     const filteredProducts = useMemo(() => {
         return products.filter(product => {
             const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -102,7 +101,7 @@ function ProductList() {
             headerName: 'Image', 
             width: 80, 
             sortable: false, 
-            renderCell: (params) => ( // F-3: Image rendering
+            renderCell: (params) => ( 
                 <img 
                     src={params.value && params.value.length > 0 ? params.value[0].url : ''} 
                     alt="Product" 
@@ -114,7 +113,7 @@ function ProductList() {
             field: 'name', 
             headerName: 'Product Name', 
             flex: 2,
-            renderCell: (params) => ( // F-4: Link to details page
+            renderCell: (params) => ( 
                 <Button 
                     onClick={() => navigate(`/product/${params.id}`)}
                     style={{ textTransform: 'none', justifyContent: 'flex-start' }}
@@ -128,7 +127,7 @@ function ProductList() {
             headerName: 'Price (₹)', 
             flex: 1, 
             type: 'number' 
-        }, // F-7: Sortable by price
+        }, 
         { 
             field: 'category', 
             headerName: 'Category', 
@@ -147,7 +146,7 @@ function ProductList() {
 </Typography>
 
             <Box display="flex" gap={2} mb={2} sx={{ flexDirection: { xs: 'column', md: 'row' } }}>
-                <TextField // F-5: Search Filter
+                <TextField 
                     label="Search by Product Name"
                     variant="outlined"
                     size="small"
@@ -158,7 +157,7 @@ function ProductList() {
 
                 <FormControl size="small" sx={{ minWidth: 200 }}>
                     <InputLabel id="category-filter-label">Category</InputLabel>
-                    <Select // F-6: Category Dropdown Filter
+                    <Select 
                         labelId="category-filter-label"
                         value={categoryFilter}
                         label="Category"
@@ -187,35 +186,35 @@ function ProductList() {
                 ) : null}
             </Box>
             
-            {loading && ( // F-10: Loader
+            {loading && ( 
                 <Box display="flex" justifyContent="center" py={2}>
                     <CircularProgress />
                 </Box>
             )}
 
-            <DataGrid // F-1: Use Datagrid
+            <DataGrid 
                 rows={filteredProducts}
                 columns={columns}
-                paginationMode="server" // F-15: Pagination from datagrid
+                paginationMode="server" 
                 rowCount={pageState.totalProducts}
                 loading={loading}
                 
-                // F-9, F-15: Pagination state management
+                
                 paginationModel={{ page: pageState.page, pageSize: pageState.pageSize }}
                 onPaginationModelChange={(model) => setPageState(prev => ({ ...prev, page: model.page, pageSize: model.pageSize }))}
                 pageSizeOptions={[10, 25, 50]}
                 
-                // F-7: Sorting state management
+                
                 sortingMode="server"
                 sortModel={sortModel}
                 onSortModelChange={(newModel) => {
                     setSortModel(newModel);
-                    // Reset page to 0 when sorting changes
+                    
                     setPageState(prev => ({ ...prev, page: 0 }));
                 }}
                 
                 disableRowSelectionOnClick
-                // F-10: Lazy loading is implicitly handled by server-side pagination fetch
+                
             />
         </Box>
     );

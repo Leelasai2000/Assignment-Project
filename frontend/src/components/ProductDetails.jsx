@@ -17,7 +17,7 @@ function ProductDetails() {
     const [error, setError] = useState(null);
     const [cartMessage, setCartMessage] = useState(null);
 
-    // F-4 & F-10: Fetch product details
+    
     useEffect(() => {
         const fetchProduct = async () => {
             setLoading(true);
@@ -38,7 +38,7 @@ function ProductDetails() {
         fetchProduct();
     }, [id]);
 
-    // B-3: Add item to cart
+    
     const handleAddToCart = async () => {
         if (!token) {
             setCartMessage({ severity: 'warning', text: 'Please log in to add items to the cart.' });
