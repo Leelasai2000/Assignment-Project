@@ -1,0 +1,18 @@
+# Dependency directories - DO NOT COMMIT THESE!
+node_modules/
+
+# Logs
+npm-debug.log
+yarn-error.log
+
+# Environment/Deployment Files
+.env
+.DS_Store
+.netlify
+.vercel
+/backend/npm-debug.log
+/frontend/npm-debug.log
+
+# Build output directories
+/backend/dist
+/frontend/dist
