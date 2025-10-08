@@ -1,9 +1,12 @@
-import { Box, CssBaseline } from '@mui/material'; // Changed import: Box instead of Container
+// src/App.js - Only changes shown
+
+import { Box, CssBaseline } from '@mui/material'; 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProductList from './components/ProductList';
 import ProductDetails from './components/ProductDetails';
 import Login from './components/Login';
+import Register from './components/Register'; // <-- NEW IMPORT
 import Cart from './components/Cart';
 import { AuthProvider } from './context/AuthContext';
 
@@ -14,23 +17,20 @@ function App() {
                 <CssBaseline /> 
                 <Navbar />
                 
-                {/* This Box component explicitly centers content horizontally 
-                  using standard CSS centering properties (mx: 'auto') 
-                  and sets a maximum width for the entire content area.
-                */}
                 <Box 
                     sx={{
-                        maxWidth: 'lg', // Corresponds to the 'lg' breakpoint max-width
+                        maxWidth: 'lg',
                         width: '100%', 
                         my: 0, 
-                        mx: 'auto', // FORCES horizontal centering
-                        p: { xs: 1, md: 3 } // Adds responsive padding around the content
+                        mx: 'auto',
+                        p: { xs: 1, md: 3 }
                     }}
                 > 
                     <Routes>
                         <Route path="/" element={<ProductList />} />
                         <Route path="/product/:id" element={<ProductDetails />} />
                         <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} /> // <-- NEW ROUTE
                         <Route path="/cart" element={<Cart />} />
                     </Routes>
                 </Box>
