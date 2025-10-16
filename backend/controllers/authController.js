@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const JWT_SECRET = 'your_super_secret_jwt_key'; 
+const JWT_SECRET = 'your_super_secret_jwt_key';
 
 const register = async (req, res) => {
     try {
@@ -54,6 +54,7 @@ const login = async (req, res) => {
             { expiresIn: '1h' },
             (err, token) => {
                 if (err) throw err;
+                
                 res.json({ token, user: { id: user.id, username: user.username } });
             }
         );

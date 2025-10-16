@@ -1,151 +1,172 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, CircularProgress, Alert, Button, Card, CardContent, Grid } from '@mui/material';
-import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Box, Typography, CircularProgress, Alert, Button, Paper, List, ListItem, ListItemText, Divider, IconButton } from '@mui/material';
+import { ShoppingCartCheckout as CheckoutIcon, RemoveShoppingCart as EmptyCartIcon } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
-const API_CART_BASE = 'http://localhost:5000/api/cart';
+
+const BACKEND_BASE = 'http://localhost:5000/api/cart';
 
 function Cart() {
-  const { token } = useAuth();
-  const [cart, setCart] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [checkoutMessage, setCheckoutMessage] = useState(null);
+    const { token } = useAuth();
+    const navigate = useNavigate();
 
-  const fetchCart = useCallback(async () => {
+    const [cart, setCart] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [checkoutMessage, setCheckoutMessage] = useState(null);
+
+  
+    const fetchCart = useCallback(async () => {
+        if (!token) {
+            setLoading(false);
+            setCart([]);
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+        setCheckoutMessage(null);
+
+        try {
+            const response = await fetch(`${BACKEND_BASE}`, {
+                headers: {
+                    'x-auth-token': token,
+                },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.msg || 'Failed to fetch cart.');
+            }
+
+            setCart(data);
+        } catch (err) {
+            setError(err.message.includes("Failed to fetch") 
+                ? `Network Error: Could not reach the backend server. Ensure your Node.js server is running.`
+                : err.message
+            );
+        } finally {
+            setLoading(false);
+        }
+    }, [token]);
+
+    useEffect(() => {
+        fetchCart();
+    }, [fetchCart]);
+
+    
+    const handleCheckout = async () => {
+        if (!token) return;
+
+        setLoading(true);
+        setCheckoutMessage(null);
+
+        try {
+            const response = await fetch(`${BACKEND_BASE}/checkout`, {
+                method: 'POST',
+                headers: {
+                    'x-auth-token': token,
+                },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.msg || 'Checkout failed.');
+            }
+
+            // Requirement 9: Empty the cart after placing the order
+            setCart([]); 
+            setCheckoutMessage({ severity: 'success', text: 'Order placed successfully! Your cart is now empty.' });
+
+        } catch (err) {
+            setCheckoutMessage({ 
+                severity: 'error', 
+                text: err.message.includes('Failed to fetch') 
+                    ? `Network Error: Could not reach backend.`
+                    : err.message 
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const cartTotal = useMemo(() => {
+        return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+    }, [cart]);
+
     if (!token) {
-      setError('You must be logged in to view your cart.');
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    setCheckoutMessage(null);
-
-    try {
-      const response = await fetch(API_CART_BASE, {
-        headers: {
-          'x-auth-token': token,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || 'Failed to fetch cart data');
-      }
-
-      const data = await response.json();
-      setCart(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
-
-  // B-2: Fetch cart on component mount/token change
-  useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
-
-  // B-4: Handle checkout and empty cart
-  const handleCheckout = async () => {
-    if (cart.length === 0) {
-      setCheckoutMessage({ severity: 'warning', text: 'Your cart is already empty.' });
-      return;
+        return (
+            <Alert severity="info" sx={{ mt: 4 }}>
+                <Typography variant="h6">Authentication Required</Typography>
+                Please <Button component={Button} onClick={() => navigate('/login')}>Login</Button> to view and manage your cart.
+            </Alert>
+        );
     }
 
-    try {
-      const response = await fetch(`${API_CART_BASE}/checkout`, {
-        method: 'POST',
-        headers: {
-          'x-auth-token': token,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || 'Checkout failed');
-      }
-
-      setCart([]); // Clear frontend state
-      setCheckoutMessage({ severity: 'success', text: 'Order placed successfully! Your cart has been emptied.' });
-    } catch (err) {
-      setCheckoutMessage({ severity: 'error', text: err.message });
+    if (loading) {
+        return <Box display="flex" justifyContent="center" alignItems="center" height="50vh"><CircularProgress size={60} /></Box>;
     }
-  };
 
-  if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
-  }
+    if (error) {
+        return <Alert severity="error" sx={{ mt: 4 }}>{error}</Alert>;
+    }
 
-  if (error) {
-    return <Alert severity="error" sx={{ mt: 4 }}>{error}</Alert>;
-  }
+    return (
+        <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
+            <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 700 }}>
+                Shopping Cart
+            </Typography>
 
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            {checkoutMessage && <Alert severity={checkoutMessage.severity} sx={{ mb: 2 }}>{checkoutMessage.text}</Alert>}
 
-  return (
-    <Box sx={{ mt: 4 }}>
-      <Typography variant="h3" gutterBottom>Your Shopping Cart</Typography>
+            {cart.length === 0 ? (
+                <Alert severity="info" icon={<EmptyCartIcon />} sx={{ mt: 3 }}>
+                    Your cart is empty. <Button component={Button} onClick={() => navigate('/')} size="small">Browse Products</Button>
+                </Alert>
+            ) : (
+                <Paper elevation={3} sx={{ p: 2, borderRadius: '12px' }}>
+                    <List>
+                        {cart.map((item, index) => (
+                            <React.Fragment key={item.productId}>
+                                <ListItem>
+                                    <ListItemText
+                                        primary={item.name}
+                                        secondary={`Quantity: ${item.quantity} x ₹${item.price.toLocaleString('en-IN')}`}
+                                    />
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                                        ₹{(item.price * item.quantity).toLocaleString('en-IN')}
+                                    </Typography>
+                                </ListItem>
+                                {index < cart.length - 1 && <Divider component="li" />}
+                            </React.Fragment>
+                        ))}
+                        <Divider sx={{ my: 2, borderBottomWidth: 2 }} />
+                        <ListItem>
+                            <ListItemText primary={<Typography variant="h6" sx={{ fontWeight: 'bold' }}>Total</Typography>} />
+                            <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+                                ₹{cartTotal.toLocaleString('en-IN')}
+                            </Typography>
+                        </ListItem>
+                    </List>
 
-      {checkoutMessage && <Alert severity={checkoutMessage.severity} sx={{ mb: 3 }}>{checkoutMessage.text}</Alert>}
-
-      {!token ? (
-        <Alert severity="info">Please log in to view your personalized cart data.</Alert>
-      ) : cart.length === 0 ? (
-        <Alert severity="info">Your cart is currently empty.</Alert>
-      ) : (
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
-            {cart.map((item) => (
-              <Card key={item.productId} sx={{ mb: 2 }}>
-                <CardContent>
-                  <Grid container alignItems="center">
-                    <Grid item xs={8}>
-                      <Typography variant="h6">{item.name}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Price: ₹{item.price}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={2}>
-                      <Typography variant="body1">Qty: {item.quantity}</Typography>
-                    </Grid>
-                    <Grid item xs={2} sx={{ textAlign: 'right' }}>
-                      <Typography variant="subtitle1">
-                        Total: ₹{(item.price * item.quantity).toFixed(2)}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            ))}
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Card elevation={3}>
-              <CardContent>
-                <Typography variant="h5" gutterBottom>Cart Summary</Typography>
-                <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
-                  Subtotal: ₹{subtotal.toFixed(2)}
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="success"
-                  fullWidth
-                  onClick={handleCheckout}
-                  startIcon={<ShoppingCartCheckoutIcon />}
-                  disabled={cart.length === 0}
-                >
-                  Place Order & Checkout
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      )}
-    </Box>
-  );
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        startIcon={<CheckoutIcon />}
+                        sx={{ mt: 3, py: 1.5 }}
+                        onClick={handleCheckout}
+                        disabled={loading}
+                    >
+                        Place Order (Checkout)
+                    </Button>
+                </Paper>
+            )}
+        </Box>
+    );
 }
 
 export default Cart;

@@ -1,8 +1,7 @@
-// src/components/Register.jsx
-
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Box, TextField, Button, Typography, Paper, Alert } from '@mui/material';
+import { Box, TextField, Button, Typography, Paper, Alert, CircularProgress } from '@mui/material';
+
 
 const API_REGISTER_URL = 'http://localhost:5000/api/auth/register';
 
@@ -11,12 +10,14 @@ function Register() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleRegister = async (e) => {
         e.preventDefault();
         setError(null);
         setSuccess(false);
+        setLoading(true);
 
         try {
             const response = await fetch(API_REGISTER_URL, {
@@ -34,18 +35,23 @@ function Register() {
             }
 
             setSuccess(true);
-            // B-1: Redirect to login after successful registration
+            
             setTimeout(() => navigate('/login'), 1500); 
 
         } catch (err) {
-            setError(err.message);
+            setError(err.message.includes("Failed to fetch") 
+                ? `Network Error: Could not reach the authentication server at http://localhost:5000. Please ensure your Node.js server is running.`
+                : err.message
+            );
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-            <Paper elevation={3} sx={{ p: 4, maxWidth: 400, width: '100%' }}>
-                <Typography variant="h5" component="h1" gutterBottom align="center">
+            <Paper elevation={6} sx={{ p: 4, maxWidth: 400, width: '100%', borderRadius: '12px' }}>
+                <Typography variant="h5" component="h1" gutterBottom align="center" sx={{ fontWeight: 600 }}>
                     Register User
                 </Typography>
                 {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -60,6 +66,7 @@ function Register() {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         autoFocus
+                        disabled={loading}
                     />
                     <TextField
                         margin="normal"
@@ -69,14 +76,18 @@ function Register() {
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
                     />
                     <Button
                         type="submit"
                         fullWidth
                         variant="contained"
-                        sx={{ mt: 3, mb: 2 }}
+                        color="secondary"
+                        sx={{ mt: 3, mb: 2, py: 1.5 }}
+                        disabled={loading}
+                        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
                     >
-                        Sign Up
+                        {loading ? 'Signing Up...' : 'Sign Up'}
                     </Button>
                 </Box>
                 <Typography variant="body2" align="center">
